@@ -1,0 +1,77 @@
+version: "3"
+
+services:
+  kobra_explorer:
+    container_name: kobra_explorer
+    image: kobradag/koda_explorer:latest
+    restart: unless-stopped
+    environment:
+      API_URI: "http://localhost:8000"
+      API_WS_URI: "ws://localhost:8000"
+    ports:
+      - "8080:8080/tcp"
+
+  kobra_rest_server:
+    container_name: kobra_rest_server
+    image: kobradag/koda_rest_server:latest
+    restart: unless-stopped
+    environment:
+      KOBRAD_HOST_1: kobrad:44448
+      SQL_URI: postgresql+asyncpg://postgres:postgres@postgresql:5432/postgres
+    ports:
+      - "8000:8000/tcp"
+    links:
+      - kobrad
+      - postgresql
+      
+  kobra_socket_server:
+    container_name: kobra-socket-server
+    image: kobradag/koda-socket-server:latest
+    restart: unless-stopped
+    environment:
+      KOBRAD_HOST_1: kobrad:44448
+      SQL_URI: postgresql+asyncpg://postgres:postgres@postgresql:5432/postgres
+    ports:
+      - "8001:8000/tcp"
+    links:
+      - postgresql    
+
+  kobra_db_filler:
+    container_name: kobra_db_filler
+    image: kobradag/kobra_db_filler:latest
+    restart: unless-stopped
+    environment:
+      DEBUG: "true"
+      KOBRAD_HOST_1: kobrad:44448
+      SQL_URI: postgresql://postgres:postgres@postgresql:5432/postgres
+    links:
+      - kobrad
+      - postgresql
+
+  postgresql:
+    container_name: postgresql
+    image: postgres:14-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432/tcp"
+    volumes:
+      - postgresql:/var/lib/postgresql/data/
+
+  kobrad:
+    container_name: kobrad
+    image: supertypo/kaspad:latest
+    restart: unless-stopped
+    ports:
+      - "44448:44448/tcp"
+      - "44447:44447/tcp"
+    volumes:
+      - kobrad:/app/app/
+    command: kobrad --utxoindex 
+
+volumes:
+  postgresql:
+  kobrad:

@@ -1,0 +1,93 @@
+version: "3"
+
+services:
+  kobra_rest_server:
+    container_name: koda_rest_server
+    image: kobradag/koda-rest-server:latest
+    restart: unless-stopped
+    environment:
+      KOBRAD_HOST_1: "YOUR_PUBLIC_IP:44448"
+      SQL_URI: postgresql+asyncpg://postgres:postgres@postgresql:5432/postgres
+    ports:
+      - "8000:8000/tcp"
+    networks:
+      - kobra_network
+
+  kobra_socket_server:
+    container_name: koda-socket-server
+    image: kobradag/koda-socket-server:latest
+    restart: unless-stopped
+    environment:
+      KOBRAD_HOST_1: "YOUR_PUBLIC_IP:44448"
+      SQL_URI: postgresql+asyncpg://postgres:postgres@postgresql:5432/postgres
+    ports:
+      - "8001:8000/tcp"
+    networks:
+      - kobra_network
+
+  kobra_db_filler:
+    container_name: koda-db-filler
+    image: kobradag/koda-db-filter
+    restart: unless-stopped 
+    environment:
+      DEBUG: "true"
+      KOBRAD_HOSTS_1: "YOUR_PUBLIC_IP:44448"
+      SQL_URI: postgresql://postgres:postgres@postgresql:5432/postgres
+      BATCH_PROCESSING: "true"
+    networks:
+      - kobra_network
+
+  postgresql:
+    container_name: postgresql
+    image: postgres:14-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5433:5433/tcp"
+    volumes:
+      - postgresql:/var/lib/postgresql/data/ 
+    networks:
+      - kobra_network
+
+  kobra_explorer:  
+    container_name: koda_explorer
+    image: kobradag/kobra-explorer:latest
+    restart: unless-stopped
+    ports:
+      - "3000:3000/tcp"  
+    networks:
+      - kobra_network
+
+  kobra_kobrad:
+    container_name: kobra_kobrad
+    image: kobradag/kobrad:latest
+    restart: unless-stopped
+    volumes:
+      - /root/.kobradag:/root/.kobradag
+    command: ["./kobrad", "--utxoindex", "--saferpc"]
+    network_mode: host 
+
+  koda_web_wallet:
+    container_name: koda_web_wallet
+    image: kobradag/koda-web-wallet:latest
+    restart: unless-stopped
+    network_mode: host 
+
+  kobra_website:
+    container_name: koda_website
+    image: kobradag/website:latest
+    restart: unless-stopped
+    ports:
+      - "2900:2900/tcp"
+    networks:
+      - kobra_network
+
+volumes:
+  postgresql:
+
+networks:
+  kobra_network:
+    driver: bridge
