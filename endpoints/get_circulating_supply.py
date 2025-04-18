@@ -9,7 +9,7 @@ from fastapi.responses import PlainTextResponse
 
 class CoinSupplyResponse(BaseModel):
     circulatingSupply: str = "1000697580640180"
-    maxSupply: str = "50000000000000000"
+    maxSupply: str = "44500000000000000"
 
 
 @app.get("/info/coinsupply", response_model=CoinSupplyResponse, tags=["Kobra network info"])
